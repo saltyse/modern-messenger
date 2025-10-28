@@ -1,0 +1,11 @@
+image: gitpod/workspace-full
+
+tasks:
+  - name: Setup Android Build
+    init: |
+      sudo apt update
+      sudo apt install -y python3-pip openjdk-8-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+      pip3 install buildozer
+    command: |
+      echo "✅ Environment ready for Android build!"
+      echo "🚀 Run: buildozer android debug"
