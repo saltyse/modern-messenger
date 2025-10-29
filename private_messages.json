@@ -1,0 +1,86 @@
+{
+    "('admin', 'Салти')": [
+        {
+            "user": "Салти",
+            "message": "я",
+            "image": null,
+            "video": null,
+            "timestamp": "2025-10-20T15:21:04.508306",
+            "is_admin": true,
+            "reply_to": null
+        },
+        {
+            "user": "Салти",
+            "message": "",
+            "image": "20251020_152250_956217_Салти.png",
+            "video": null,
+            "timestamp": "2025-10-20T15:22:51.008163",
+            "is_admin": true,
+            "reply_to": null
+        },
+        {
+            "user": "Салти",
+            "message": "",
+            "image": null,
+            "video": "20251020_152255_178068_Салти.MP4",
+            "timestamp": "2025-10-20T15:22:55.320922",
+            "is_admin": true,
+            "reply_to": null
+        }
+    ],
+    "1yfc_admin": [
+        {
+            "user": "1yfc",
+            "message": "asd",
+            "timestamp": "2025-10-25T19:55:35.527833",
+            "is_admin": false,
+            "id": "1761404135"
+        },
+        {
+            "user": "1yfc",
+            "message": "asd",
+            "timestamp": "2025-10-25T19:55:43.338355",
+            "is_admin": false,
+            "id": "1761404143"
+        },
+        {
+            "user": "1yfc",
+            "message": "",
+            "timestamp": "2025-10-25T19:55:51.304436",
+            "is_admin": false,
+            "id": "1761404151",
+            "image": "20251025_195551_304436_1yfc.png"
+        },
+        {
+            "user": "1yfc",
+            "message": "",
+            "timestamp": "2025-10-25T19:56:01.174508",
+            "is_admin": false,
+            "id": "1761404161",
+            "video": "20251025_195601_174508_1yfc.mp4"
+        }
+    ],
+    "admin_1": [
+        {
+            "user": "admin",
+            "message": "asdd",
+            "timestamp": "2025-10-25T22:04:40.674453",
+            "is_admin": true,
+            "id": "1761411880"
+        },
+        {
+            "user": "admin",
+            "message": "фЫ",
+            "timestamp": "2025-10-25T22:19:51.731175",
+            "is_admin": true,
+            "id": "1761412791"
+        },
+        {
+            "user": "admin",
+            "message": "ЫЫЫ",
+            "timestamp": "2025-10-25T22:19:53.694960",
+            "is_admin": true,
+            "id": "1761412793"
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+[
+    {
+        "user": "1yfc",
+        "message": "фыв",
+        "timestamp": "2025-10-25T20:33:48.743129",
+        "is_admin": false,
+        "id": "1761406428"
+    },
+    {
+        "user": "admin",
+        "message": "",
+        "timestamp": "2025-10-25T21:11:39.932506",
+        "is_admin": true,
+        "id": "1761408699",
+        "image": "20251025_211139_932506_admin.png"
+    },
+    {
+        "user": "admin",
+        "message": "",
+        "timestamp": "2025-10-25T21:11:46.009757",
+        "is_admin": true,
+        "id": "1761408706",
+        "video": "20251025_211146_009757_admin.mp4"
+    },
+    {
+        "user": "admin",
+        "message": "фыв",
+        "timestamp": "2025-10-25T22:05:28.762251",
+        "is_admin": true,
+        "id": "1761411928"
+    },
+    {
+        "user": "admin",
+        "message": "фыв",
+        "timestamp": "2025-10-25T22:19:35.342732",
+        "is_admin": true,
+        "id": "1761412775"
+    },
+    {
+        "user": "admin",
+        "message": "asd",
+        "timestamp": "2025-10-25T23:00:34.342431",
+        "is_admin": true,
+        "id": "1761415234"
+    }
+]

@@ -1,0 +1,35 @@
+{
+    "1761338605": [],
+    "1761338611": [
+        {
+            "user": "admin",
+            "message": "ФЫВ",
+            "timestamp": "2025-10-25T22:20:10.063375",
+            "is_admin": true,
+            "id": "1761412810"
+        }
+    ],
+    "1761406529": [
+        {
+            "user": "admin",
+            "message": "asd",
+            "timestamp": "2025-10-25T20:35:36.766791",
+            "is_admin": true,
+            "id": "1761406536"
+        },
+        {
+            "user": "admin",
+            "message": "asd",
+            "timestamp": "2025-10-25T20:35:38.155411",
+            "is_admin": true,
+            "id": "1761406538"
+        },
+        {
+            "user": "admin",
+            "message": "asd",
+            "timestamp": "2025-10-25T20:35:38.980024",
+            "is_admin": true,
+            "id": "1761406538"
+        }
+    ]
+}

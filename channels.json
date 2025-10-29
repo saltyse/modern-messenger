@@ -1,0 +1,37 @@
+{
+    "1761338605": {
+        "name": "1",
+        "description": "2222",
+        "owner": "РЎР°Р»С‚Рё",
+        "is_public": true,
+        "created": "2025-10-25T01:43:25.596023",
+        "subscribers": [
+            "РЎР°Р»С‚Рё",
+            "1yfc",
+            "admin"
+        ],
+        "subscribers_can_write": false
+    },
+    "1761338611": {
+        "name": "222",
+        "description": "22222222",
+        "owner": "РЎР°Р»С‚Рё",
+        "is_public": false,
+        "created": "2025-10-25T01:43:31.005818",
+        "subscribers": [
+            "РЎР°Р»С‚Рё",
+            "admin"
+        ]
+    },
+    "1761406529": {
+        "name": "sdf",
+        "description": "sdf",
+        "owner": "admin",
+        "is_public": false,
+        "subscribers_can_write": true,
+        "created": "2025-10-25T20:35:29.665148",
+        "subscribers": [
+            "admin"
+        ]
+    }
+}

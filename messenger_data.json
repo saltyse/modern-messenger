@@ -1,0 +1,47 @@
+{
+  "users": {
+    "admin": {
+      "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+      "is_admin": true
+    },
+    "1": {
+      "password": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "is_admin": false
+    }
+  },
+  "messages": [
+    {
+      "user": "1",
+      "message": "asd",
+      "timestamp": "2025-10-28T21:38:41.110427"
+    },
+    {
+      "user": "1",
+      "message": "asd",
+      "timestamp": "2025-10-28T21:38:42.133492"
+    },
+    {
+      "user": "1",
+      "message": "aasdasdasdasdassd",
+      "timestamp": "2025-10-28T21:38:52.883588"
+    },
+    {
+      "user": "1",
+      "message": "aasd",
+      "timestamp": "2025-10-28T21:45:34.660206",
+      "is_admin": false,
+      "id": "1761669934"
+    }
+  ],
+  "private_messages": {
+    "1_admin": [
+      {
+        "user": "1",
+        "message": "asd",
+        "timestamp": "2025-10-28T21:45:50.765092",
+        "is_admin": false,
+        "id": "1761669950"
+      }
+    ]
+  }
+}
