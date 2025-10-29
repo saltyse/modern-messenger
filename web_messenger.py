@@ -1,71 +1,16 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, String, Integer, Boolean, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+from datetime import datetime
 import json
 import uuid
 from typing import Dict, List
 import uvicorn
 
-# Конфигурация
-class Config:
-    SECRET_KEY = "tandau-secret-key-2024-render"
-    ALGORITHM = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES = 1440
-    DATABASE_URL = "sqlite:///./tandau.db"
-
-Base = declarative_base()
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True)
-    password_hash = Column(String(255))
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class Message(Base):
-    __tablename__ = "messages"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50))
-    content = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-
-# Настройка БД
-engine = create_engine(Config.DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base.metadata.create_all(bind=engine)
-
-# Аутентификация
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, Config.SECRET_KEY, algorithm=Config.ALGORITHM)
-
-def verify_token(token: str):
-    try:
-        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=[Config.ALGORITHM])
-        return payload.get("sub")
-    except JWTError:
-        return None
-
 # Менеджер WebSocket соединений
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.messages_history = []
 
     async def connect(self, websocket: WebSocket, username: str):
         await websocket.accept()
@@ -73,8 +18,18 @@ class ConnectionManager:
             self.active_connections[username] = []
         self.active_connections[username].append(websocket)
         
+        # Отправляем историю сообщений новому пользователю
+        for msg in self.messages_history[-50:]:  # Последние 50 сообщений
+            await websocket.send_text(json.dumps(msg))
+        
         # Уведомляем о новом пользователе
-        await self.broadcast_system_message(f"🟢 {username} присоединился к чату")
+        system_msg = {
+            "type": "system",
+            "id": str(uuid.uuid4()),
+            "content": f"🟢 {username} присоединился к чату",
+            "timestamp": datetime.now().isoformat()
+        }
+        await self.broadcast(json.dumps(system_msg))
         await self.broadcast_user_list()
 
     def disconnect(self, websocket: WebSocket, username: str):
@@ -98,42 +53,27 @@ class ConnectionManager:
             "users": users
         }))
 
-    async def broadcast_system_message(self, message: str):
-        await self.broadcast(json.dumps({
-            "type": "system",
-            "id": str(uuid.uuid4()),
-            "content": message,
-            "timestamp": datetime.utcnow().isoformat()
-        }))
-
     async def send_message(self, message_data: dict):
-        await self.broadcast(json.dumps({
+        message = {
             "type": "message",
             "id": str(uuid.uuid4()),
             "username": message_data["username"],
             "content": message_data["content"],
-            "timestamp": datetime.utcnow().isoformat()
-        }))
-
-# Модели запросов
-class UserRegister(BaseModel):
-    username: str
-    password: str
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Сохраняем в историю
+        self.messages_history.append(message)
+        
+        # Ограничиваем историю 100 сообщениями
+        if len(self.messages_history) > 100:
+            self.messages_history = self.messages_history[-100:]
+        
+        await self.broadcast(json.dumps(message))
 
 # FastAPI приложение
 app = FastAPI(title="Tandau Messenger")
 manager = ConnectionManager()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # HTML интерфейс
 HTML = """
@@ -412,7 +352,7 @@ HTML = """
                 <h1>Tandau</h1>
                 <p style="font-size: 1.2rem; margin-bottom: 2rem;">Современный веб-мессенджер</p>
                 <div style="text-align: left;">
-                    <div style="margin: 1rem 0; font-size: 1.1rem;">🔒 Безопасное общение</div>
+                    <div style="margin: 1rem 0; font-size: 1.1rem;">🔒 Анонимное общение</div>
                     <div style="margin: 1rem 0; font-size: 1.1rem;">🌐 Реальное время</div>
                     <div style="margin: 1rem 0; font-size: 1.1rem;">👥 Публичные чаты</div>
                 </div>
@@ -420,22 +360,12 @@ HTML = """
         </div>
         <div class="auth-right">
             <div class="auth-form">
-                <h2 id="authTitle">Вход в систему</h2>
-                <div id="loginForm">
-                    <input type="text" id="loginUsername" class="form-input" placeholder="Имя пользователя">
-                    <input type="password" id="loginPassword" class="form-input" placeholder="Пароль">
-                    <button class="auth-button" onclick="login()">Войти</button>
-                    <div class="auth-switch" onclick="showRegister()">
-                        Нет аккаунта? Зарегистрироваться
-                    </div>
-                </div>
-                <div id="registerForm" style="display: none;">
-                    <input type="text" id="registerUsername" class="form-input" placeholder="Имя пользователя">
-                    <input type="password" id="registerPassword" class="form-input" placeholder="Пароль">
-                    <input type="password" id="registerConfirm" class="form-input" placeholder="Повторите пароль">
-                    <button class="auth-button" onclick="register()">Зарегистрироваться</button>
-                    <div class="auth-switch" onclick="showLogin()">
-                        Уже есть аккаунт? Войти
+                <h2>Вход в чат</h2>
+                <div>
+                    <input type="text" id="usernameInput" class="form-input" placeholder="Введите ваше имя">
+                    <button class="auth-button" onclick="login()">Войти в чат</button>
+                    <div class="auth-switch" style="color: #A0A0B8;">
+                        Просто введите имя и начинайте общаться!
                     </div>
                 </div>
             </div>
@@ -490,93 +420,23 @@ HTML = """
     <script>
         let ws = null;
         let currentUser = null;
-        let token = null;
 
-        async function login() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            if (!username || !password) {
-                alert('Пожалуйста, заполните все поля');
+        function login() {
+            const username = document.getElementById('usernameInput').value.trim();
+            
+            if (!username) {
+                alert('Пожалуйста, введите ваше имя');
                 return;
             }
 
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    token = data.access_token;
-                    currentUser = username;
-                    startWebSocket();
-                    showMainScreen();
-                } else {
-                    alert(data.detail || 'Ошибка входа');
-                }
-            } catch (error) {
-                alert('Ошибка подключения к серверу');
-            }
-        }
-
-        async function register() {
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirm = document.getElementById('registerConfirm').value;
-
-            if (!username || !password || !confirm) {
-                alert('Пожалуйста, заполните все поля');
+            if (username.length < 2) {
+                alert('Имя должно быть не менее 2 символов');
                 return;
             }
 
-            if (password !== confirm) {
-                alert('Пароли не совпадают');
-                return;
-            }
-
-            if (username.length < 3) {
-                alert('Имя пользователя должно быть не менее 3 символов');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert('Регистрация успешна! Теперь вы можете войти.');
-                    showLogin();
-                } else {
-                    alert(data.detail || 'Ошибка регистрации');
-                }
-            } catch (error) {
-                alert('Ошибка подключения к серверу');
-            }
-        }
-
-        function showLogin() {
-            document.getElementById('authTitle').textContent = 'Вход в систему';
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-        }
-
-        function showRegister() {
-            document.getElementById('authTitle').textContent = 'Регистрация';
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
+            currentUser = username;
+            startWebSocket();
+            showMainScreen();
         }
 
         function showMainScreen() {
@@ -586,11 +446,14 @@ HTML = """
             document.getElementById('userAvatar').textContent = currentUser.substring(0, 2).toUpperCase();
             document.getElementById('messageInput').disabled = false;
             document.getElementById('sendButton').disabled = false;
+            
+            // Фокус на поле ввода
+            document.getElementById('messageInput').focus();
         }
 
         function startWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws?token=${token}`;
+            const wsUrl = `${protocol}//${window.location.host}/ws?username=${encodeURIComponent(currentUser)}`;
             
             ws = new WebSocket(wsUrl);
 
@@ -605,11 +468,16 @@ HTML = """
 
             ws.onclose = function() {
                 console.log('WebSocket disconnected');
+                // Пытаемся переподключиться через 3 секунды
                 setTimeout(() => {
                     if (currentUser) {
                         startWebSocket();
                     }
                 }, 3000);
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
             };
         }
 
@@ -704,8 +572,15 @@ HTML = """
             }
         });
 
-        // Инициализация
-        showLogin();
+        // Обработка Enter в поле имени пользователя
+        document.getElementById('usernameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        // Фокус на поле ввода имени при загрузке
+        document.getElementById('usernameInput').focus();
     </script>
 </body>
 </html>
@@ -715,35 +590,8 @@ HTML = """
 async def root():
     return HTMLResponse(HTML)
 
-@app.post("/api/auth/register")
-async def register(user: UserRegister, db: SessionLocal = Depends(get_db)):
-    existing_user = db.query(User).filter(User.username == user.username).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    hashed_password = get_password_hash(user.password)
-    db_user = User(username=user.username, password_hash=hashed_password)
-    db.add(db_user)
-    db.commit()
-    
-    return {"message": "User created successfully"}
-
-@app.post("/api/auth/login")
-async def login(user: UserLogin, db: SessionLocal = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
-    if not db_user or not verify_password(user.password, db_user.password_hash):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
-    access_token = create_access_token(data={"sub": db_user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
-
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, token: str):
-    username = verify_token(token)
-    if not username:
-        await websocket.close()
-        return
-
+async def websocket_endpoint(websocket: WebSocket, username: str = "Anonymous"):
     await manager.connect(websocket, username)
     
     try:
@@ -751,17 +599,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             data = await websocket.receive_text()
             message_data = json.loads(data)
             
-            # Сохраняем в базу данных
-            db = SessionLocal()
-            db_message = Message(
-                username=username,
-                content=message_data["content"]
-            )
-            db.add(db_message)
-            db.commit()
-            db.close()
-            
-            # Отправляем всем
+            # Отправляем сообщение всем
             await manager.send_message({
                 "username": username,
                 "content": message_data["content"]
@@ -773,4 +611,4 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         await manager.broadcast_user_list()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5555, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
